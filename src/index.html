@@ -38,10 +38,10 @@
                 id: i,
                 label: `name${i}`,
                 children: Array.from({length: 10}, (v, j) => ({
-                    id: j,
+                    id: `${i}-${j}`,
                     label: `name${i}-${j}`,
                     children: Array.from({length: 10}, (v, k) => ({
-                        id: k,
+                        id: `${i}-${j}-${k}`,
                         label: `name${i}-${j}-${k}`,
                     }))
                 }))

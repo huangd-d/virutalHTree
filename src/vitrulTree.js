@@ -137,10 +137,11 @@ export class VitrulHTree {
     initTreeData(datas, parentId, level) {
         return datas.map((item) => {
             const node = new Node();
-            node.id = item[this.props.nodeKey];
+            node.id = item[this.nodeKey];
+            
             node.label = item[this.props.label];
-            node.disabled = item[this.props.disabled];
-            node.isLeaf = item[this.props.isLeaf];
+            node.disabled = item[this.props.disabled] || false;
+            node.isLeaf = item[this.props.isLeaf] || false;
             node.data = {
                 ...item,
             };
@@ -154,17 +155,19 @@ export class VitrulHTree {
 
             if (item[this.props.children] && item[this.props.children].length > 0) {
                 node.children = this.initTreeData(item.children, node.id, level + 1);
-            } else {
-                node.isLeaf = true;
             }
 
             return node;
         });
     }
 
+    // 初始化可见节点
     initVisibleNodes(nodeList, arr) {
+        // 遍历节点列表
         nodeList.forEach(node => {
+            // 将节点添加到数组中
             arr.push(node);
+            // 如果节点展开且有子节点，则递归调用initVisibleNodes函数
             if (node.expanded && node.children) {
                 this.initVisibleNodes(node.children, arr);
             }
@@ -215,8 +218,11 @@ export class VitrulHTree {
         expandIcon.style.width = '26px';
         expandIcon.style.height = '100%';
         expandIcon.style.marginRight = `6px`;
+        expandIcon.style.cursor = 'pointer';
         expandIcon.addEventListener('click', (e) => {
-            const index = e.target.parentNode.dataset.id;
+            const index = e.target.parentNode.dataset.id * 1;
+            console.log(index, e);
+            
             const node = this.visibleNodes[this.startIndex + index];
             this.expandNode(node);
         });
@@ -317,9 +323,111 @@ export class VitrulHTree {
         } else {
             nodeDom.classList.remove('h-is-indeterminate');
         }
+        nodeDom.style.paddingLeft = `${node.level * this.indent}px`;
 
         nodeDom.querySelector('.h-tree-label').innerText = node.label;// 更新label
         // console.log();
         
+    }
+    expandNode(node) {
+        
+        // debugger
+        if (node.isLeaf) {
+            return;
+        }
+        const index = this.visibleNodes.findIndex(item => item.id === node.id);
+        if (node.expanded) {
+            node.expanded = false;
+            let endIndex = index + 1;
+            let nextNode = this.visibleNodes[endIndex];
+            while (nextNode && nextNode.level > node.level) {
+                // nextNode.visible = false;
+                nextNode = this.visibleNodes[++endIndex];
+            }
+            this.visibleNodes.splice(index + 1, endIndex - index - 1); // 删除子节点
+            
+            this.updateDom();
+        } else {
+            node.expanded = true;
+            new Promise((resolve, reject) => {
+                if (this.load && !node.children.length) { // 如果有load方法，并且没有子节点，则调用load方法获取子节点
+                    this.load(node, resolve)  // resolve返回子节点
+                } else {
+                    resolve(node.children); // 否则直接返回子节点
+                }
+            }).then(children => {
+                if (children.length === 0) {
+                    node.isLeaf = true;
+                    node.children = [];
+                } else if( children[0] instanceof Node) {
+                    const arr = [];
+                    this.initVisibleNodes(children, arr);
+                    this.visibleNodes.splice(index + 1, 0, ...arr);
+                } else {
+                    // 说明是新加载的数据
+                    const arr = [];
+                    const nodes = this.initTreeData(children, node.id, node.level + 1);
+                    node.children = children;
+                    this.initVisibleNodes(nodes, arr);
+                    // 找到原来data中的节点，然后把 children 赋值给他
+                    const data = this.getDataByKey(this.datas, node.id);
+                    if (data) {
+                        data[this.props.children] = children;// 更新data中的数据
+                    }
+                    this.visibleNodes.splice(index + 1, 0, ...arr);
+                }
+                console.log(this.visibleNodes);
+                
+                
+                this.updateDom();
+            })
+        }
+
+    }
+
+    // 根据节点key重新加载子节点
+    reloadChildrenByNodeKey(nodeKey) {
+        // 获取节点
+        const node = this.nodeMap.get(nodeKey);
+        // 如果节点不存在，则打印警告信息
+        if (!node) {
+            console.warn(`nodeKey ${nodeKey} not found`);
+           return;
+        }
+        // 循环去除 nodeMap 引用
+        const runDelete = (node) => {
+            // 删除节点
+            this.nodeMap.delete(node.id);
+            // 遍历子节点
+            for (let i = 0; i < node.children.length; i++) {
+                const child = node.children[i];
+                // 递归删除子节点
+                runDelete(child);
+            }
+        }
+        runDelete(node); // 删除节点
+        // 将节点设置为未展开状态
+        node.expanded = false;
+        // 将节点设置为非叶子节点
+        node.isLeaf = false;
+        node.children = []; // 清空子节点
+        this.expandNode(node); // 重新加载子节点
+        
+    }
+
+    getDataByKey(arr, key) {
+        const keyList = [];
+        let node = this.nodeMap.get(key);
+        while (node) {
+            keyList.push(node.id);
+            node = this.nodeMap.get(node.parentId);
+        }
+        let id = keyList.pop();
+        let data = arr.find(item => item[this.nodeKey] === id); // 找到根节点
+        while (keyList.length && data) {
+            id = keyList.pop();
+            data = data[this.props.children].find(item => item[this.nodeKey] === id); // 找到子节点
+        }
+        return keyList.length ? null : data;
     }
 }
