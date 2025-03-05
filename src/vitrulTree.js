@@ -36,15 +36,15 @@ export class VitrulHTree {
         // 保存虚拟滚动容器中显示的节点
         this.visibleNodes = [];
         // 节点唯一key
-        this.nodeKey = options.nodeKey || 'id';
+        this.nodeKey = options.nodeKey || "id";
         // 根节点
         this.el = options.el;
         // 树节点配置
         this.props = {
-            children: 'children',
-            label: 'label',
-            disabled: 'disabled',
-            isLeaf: 'isLeaf',
+            children: "children",
+            label: "label",
+            disabled: "disabled",
+            isLeaf: "isLeaf",
             ...options.props,
         };
         // 加载子集方法
@@ -98,7 +98,7 @@ export class VitrulHTree {
         this.initDom();
     }
     initExpendedNodes() {
-        this.defaultExpandedKeys.forEach(key => {
+        this.defaultExpandedKeys.forEach((key) => {
             const node = this.nodeMap.get(key);
             if (!node) {
                 return;
@@ -115,7 +115,7 @@ export class VitrulHTree {
         });
     }
     initCheckedNodes() {
-        this.defaultCheckedKeys.forEach(key => {
+        this.defaultCheckedKeys.forEach((key) => {
             const node = this.nodeMap.get(key);
             if (!node) {
                 return;
@@ -127,8 +127,8 @@ export class VitrulHTree {
             }
             let parentNode = this.nodeMap.get(node.parentId);
             while (parentNode) {
-                parentNode.checked = parentNode.children.every(child => child.checked);
-                parentNode.indeterminate = parentNode.children.some(child => !child.checked || child.indeterminate);
+                parentNode.checked = parentNode.children.every((child) => child.checked);
+                parentNode.indeterminate = parentNode.children.some((child) => !child.checked || child.indeterminate);
                 parentNode = this.nodeMap.get(parentNode.parentId);
             }
         });
@@ -164,14 +164,14 @@ export class VitrulHTree {
     // 初始化可见节点
     initVisibleNodes(nodeList, arr) {
         // 遍历节点列表
-        nodeList.forEach(node => {
+        nodeList.forEach((node) => {
             // 将节点添加到数组中
             arr.push(node);
             // 如果节点展开且有子节点，则递归调用initVisibleNodes函数
             if (node.expanded && node.children) {
                 this.initVisibleNodes(node.children, arr);
             }
-        })
+        });
     }
     get paddingTop() {
         return this.visibleNodes.slice(0, this.startIndex).reduce((prev, node) => prev + node.height, 0);
@@ -180,19 +180,19 @@ export class VitrulHTree {
         return this.visibleNodes.reduce((prev, node) => prev + node.height, 0);
     }
     initDom() {
-        this.treeWrap = document.createElement('div');
-        this.treeWrap.className = 'h-tree';
-        this.treeWrap.style.overflowY = 'auto';
-        this.treeWrap.addEventListener('scroll', this.treeWrapScroll.bind(this));
+        this.treeWrap = document.createElement("div");
+        this.treeWrap.className = "h-tree";
+        this.treeWrap.style.overflowY = "auto";
+        this.treeWrap.addEventListener("scroll", this.treeWrapScroll.bind(this));
         this.el.appendChild(this.treeWrap);
 
-        this.treeWrapContent = document.createElement('div');
+        this.treeWrapContent = document.createElement("div");
         this.treeWrap.appendChild(this.treeWrapContent);
 
-        this.treeWrapContent.className = 'h-tree-content';
+        this.treeWrapContent.className = "h-tree-content";
         this.treeWrapContent.style.height = `${this.allHeight}px`; // 初始化高度
         this.treeWrapContent.style.paddingTop = `${this.paddingTop}px`;
-        this.treeWrapContent.style.boxSizing = 'border-box';
+        this.treeWrapContent.style.boxSizing = "border-box";
         // this.treeWrapContent.style.overflowY = 'auto';
 
         const itemLen = Math.min(this.visibleNodes.length, this.showDomNum); 
@@ -206,20 +206,20 @@ export class VitrulHTree {
 
     createElementByNode(node, index) {
         
-        const item = document.createElement('div');
-        item.className = 'h-tree-item';
+        const item = document.createElement("div");
+        item.className = "h-tree-item";
         item.style.height = `${node.height}px`;
         item.style.paddingLeft = `${node.level * this.indent}px`;
         item.dataset.id = index;
         // 生成展开节点dom
-        const expandIcon = document.createElement('span');
-        expandIcon.className = 'h-tree-expand-icon';
-        expandIcon.style.display = 'flex';
-        expandIcon.style.width = '26px';
-        expandIcon.style.height = '100%';
-        expandIcon.style.marginRight = `6px`;
-        expandIcon.style.cursor = 'pointer';
-        expandIcon.addEventListener('click', (e) => {
+        const expandIcon = document.createElement("span");
+        expandIcon.className = "h-tree-expand-icon";
+        expandIcon.style.display = "flex";
+        expandIcon.style.width = "26px";
+        expandIcon.style.height = "100%";
+        expandIcon.style.marginRight = "6px";
+        expandIcon.style.cursor = "pointer";
+        expandIcon.addEventListener("click", (e) => {
             const index = e.target.parentNode.dataset.id * 1;
             console.log(index, e);
             
@@ -231,13 +231,13 @@ export class VitrulHTree {
 
         if (this.showCheckbox) {
             //生成 选中框dom
-            const checkbox = document.createElement('span');
-            checkbox.className = 'h-tree-checkbox';
-            checkbox.style.display = 'flex';
-            checkbox.style.width = '26px';
-            checkbox.style.height = '100%';
-            checkbox.style.marginRight = `6px`;
-            checkbox.addEventListener('click', (e) => {
+            const checkbox = document.createElement("span");
+            checkbox.className = "h-tree-checkbox";
+            checkbox.style.display = "flex";
+            checkbox.style.width = "26px";
+            checkbox.style.height = "100%";
+            checkbox.style.marginRight = "6px";
+            checkbox.addEventListener("click", (e) => {
                 const index = e.target.parentNode.dataset.id;
                 const node = this.visibleNodes[this.startIndex + index];
                 this.checkedKeysChange(node);
@@ -251,15 +251,16 @@ export class VitrulHTree {
                 itemDom.dataset.id = index;
                 return itemDom;
             }
-            item.appendChild(content);
+            return;
+            // item.appendChild(itemDom);
             // return itemDom;
         } else {
             // 自定义生成内容dom
-            const content = document.createElement('div');
-            content.className = 'h-tree-label';
-            content.style.display = 'flex';
-            content.style.flex = '1';
-            content.style.alignItems = 'center';
+            const content = document.createElement("div");
+            content.className = "h-tree-label";
+            content.style.display = "flex";
+            content.style.flex = "1";
+            content.style.alignItems = "center";
             content.innerText = node.data.label;
             item.appendChild(content);
         }
@@ -269,7 +270,7 @@ export class VitrulHTree {
     treeWrapScroll(e) {
         
         if (this.showDomNum >= this.visibleNodes.length) {
-            return
+            return;
         }
         const { scrollTop } = e.target;
         const index = this.computedScrollIndex(scrollTop);
@@ -302,30 +303,30 @@ export class VitrulHTree {
             this.updateDomAttribute(dom, node);
         }
     }
-    updateDomAttribute(nodeDom,node) {
+    updateDomAttribute(nodeDom, node) {
         if (node.expanded) {
-            nodeDom.classList.add('h-is-expanded');
+            nodeDom.classList.add("h-is-expanded");
         } else {
-            nodeDom.classList.remove('h-is-expanded');
+            nodeDom.classList.remove("h-is-expanded");
         }
         if (node.checked) {
-            nodeDom.classList.add('h-is-checked');
+            nodeDom.classList.add("h-is-checked");
         } else {
-            nodeDom.classList.remove('h-is-checked');
+            nodeDom.classList.remove("h-is-checked");
         }
         if (node.disabled) {
-            nodeDom.classList.add('h-is-disabled');
+            nodeDom.classList.add("h-is-disabled");
         } else {
-            nodeDom.classList.remove('h-is-disabled');
+            nodeDom.classList.remove("h-is-disabled");
         }
         if (node.indeterminate) {
-            nodeDom.classList.add('h-is-indeterminate');
+            nodeDom.classList.add("h-is-indeterminate");
         } else {
-            nodeDom.classList.remove('h-is-indeterminate');
+            nodeDom.classList.remove("h-is-indeterminate");
         }
         nodeDom.style.paddingLeft = `${node.level * this.indent}px`;
 
-        nodeDom.querySelector('.h-tree-label').innerText = node.label;// 更新label
+        nodeDom.querySelector(".h-tree-label").innerText = node.label;// 更新label
         // console.log();
         
     }
@@ -335,7 +336,7 @@ export class VitrulHTree {
         if (node.isLeaf) {
             return;
         }
-        const index = this.visibleNodes.findIndex(item => item.id === node.id);
+        const index = this.visibleNodes.findIndex((item) => item.id === node.id);
         if (node.expanded) {
             node.expanded = false;
             let endIndex = index + 1;
@@ -349,17 +350,17 @@ export class VitrulHTree {
             this.updateDom();
         } else {
             node.expanded = true;
-            new Promise((resolve, reject) => {
+            new Promise((resolve) => {
                 if (this.load && !node.children.length) { // 如果有load方法，并且没有子节点，则调用load方法获取子节点
-                    this.load(node, resolve)  // resolve返回子节点
+                    this.load(node, resolve);  // resolve返回子节点
                 } else {
                     resolve(node.children); // 否则直接返回子节点
                 }
-            }).then(children => {
+            }).then((children) => {
                 if (children.length === 0) {
                     node.isLeaf = true;
                     node.children = [];
-                } else if( children[0] instanceof Node) {
+                } else if ( children[0] instanceof Node) {
                     const arr = [];
                     this.initVisibleNodes(children, arr);
                     this.visibleNodes.splice(index + 1, 0, ...arr);
@@ -380,7 +381,7 @@ export class VitrulHTree {
                 
                 
                 this.updateDom();
-            })
+            });
         }
 
     }
@@ -404,7 +405,7 @@ export class VitrulHTree {
                 // 递归删除子节点
                 runDelete(child);
             }
-        }
+        };
         runDelete(node); // 删除节点
         // 将节点设置为未展开状态
         node.expanded = false;
@@ -423,10 +424,10 @@ export class VitrulHTree {
             node = this.nodeMap.get(node.parentId);
         }
         let id = keyList.pop();
-        let data = arr.find(item => item[this.nodeKey] === id); // 找到根节点
+        let data = arr.find((item) => item[this.nodeKey] === id); // 找到根节点
         while (keyList.length && data) {
             id = keyList.pop();
-            data = data[this.props.children].find(item => item[this.nodeKey] == id); // 找到子节点
+            data = data[this.props.children].find((item) => item[this.nodeKey] === id); // 找到子节点
         }
         return keyList.length ? null : data;
     }
