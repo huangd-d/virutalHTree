@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        #tree{
+            width: 100%;
+            height: 500px;
+        }
+        .h-tree{
+            width: 100%;
+            height: 100%;
+        }
+        .h-tree-item {
+            display: flex;
+            align-items: center;
+            /* border-bottom: 1px solid #ccc; */
+        }
+        .h-tree-item:nth-child(odd) {
+            background-color: #f9f9f9;
+        }
+        .h-tree-item:hover {
+            background-color: #b7dbf8;
+        }
+    </style>
+    
+</head>
+<body>
+    <div id="tree"></div>
+    <script  type="module">
+        import {VitrulHTree} from './vitrulTree.js';
+        // console.log(VitrulHTree);
+        let tree = new VitrulHTree({
+            el: document.getElementById('tree'),
+            data: Array.from({length: 100}, (v, i) => ({
+                id: i,
+                label: `name${i}`,
+                children: Array.from({length: 10}, (v, j) => ({
+                    id: j,
+                    label: `name${i}-${j}`,
+                    children: Array.from({length: 10}, (v, k) => ({
+                        id: k,
+                        label: `name${i}-${j}-${k}`,
+                    }))
+                }))
+            }))
+        })
+        
+    </script>
+</body>
+</html>
