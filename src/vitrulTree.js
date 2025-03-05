@@ -426,7 +426,7 @@ export class VitrulHTree {
         let data = arr.find(item => item[this.nodeKey] === id); // 找到根节点
         while (keyList.length && data) {
             id = keyList.pop();
-            data = data[this.props.children].find(item => item[this.nodeKey] === id); // 找到子节点
+            data = data[this.props.children].find(item => item[this.nodeKey] == id); // 找到子节点
         }
         return keyList.length ? null : data;
     }
