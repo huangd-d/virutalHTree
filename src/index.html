@@ -24,6 +24,87 @@
         .h-tree-item:hover {
             background-color: #b7dbf8;
         }
+        .h-tree-expand-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .h-tree-expand-icon::before {
+            content: '';
+            display: block;
+            width: 8px;
+            height: 10px;
+            background-color: #c0c4cc;
+            clip-path: polygon(0 0, 0 100%, 100% 50%);
+        }
+        .h-is-expanded .h-tree-expand-icon::before {
+            transform: rotate(90deg);
+        }
+        .h-tree-checkbox {
+            position: relative;
+            /* display: flex;
+            align-items: center;
+            justify-content: center; */
+            
+        }
+        .h-tree-checkbox::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: block;
+            width: 16px;
+            height: 16px;
+            border: 1px solid #dcdfe6;
+            border-radius: 2px;
+            cursor: pointer;
+            background-color: #fff;
+            position: relative;
+            transition: all 0.3s;
+            
+        }
+
+        .h-tree-checkbox:hover::before {
+            border-color: #409eff;
+        }
+
+        .h-is-checked .h-tree-checkbox::before {
+            background-color: #409eff;
+            border-color: #409eff;
+        }
+        .h-is-checked .h-tree-checkbox::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            z-index: 11;
+            width: 6px;
+            height: 10px;
+            border: 2px solid #fff;
+            border-top: 0;
+            border-left: 0;
+            transform-origin: center;
+            transform: translate(-50%, -50%) rotate(45deg);
+        }
+
+        .h-is-indeterminate .h-tree-checkbox::before {
+            background-color: #fff;
+            border-color: #409eff;
+        }
+
+        .h-is-indeterminate .h-tree-checkbox::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 11;
+            width: 10px;
+            height: 2px;
+            background-color: #409eff;
+        }
+        
     </style>
     
 </head>
@@ -34,8 +115,9 @@
         // console.log(VitrulHTree);
         let tree = new VitrulHTree({
             el: document.getElementById('tree'),
-            data: Array.from({length: 100}, (v, i) => ({
-                id: i,
+            showCheckbox: true,
+            data: Array.from({length: 10}, (v, i) => ({
+                id: `${i}`,
                 label: `name${i}`,
                 children: Array.from({length: 10}, (v, j) => ({
                     id: `${i}-${j}`,
@@ -45,7 +127,14 @@
                         label: `name${i}-${j}-${k}`,
                     }))
                 }))
-            }))
+            })),
+            getNodeHeight: (data) => {
+                if (data.id.length <= 2) {
+                    return 36
+                } else  {
+                    return 50
+                }
+            },
         })
         
     </script>
