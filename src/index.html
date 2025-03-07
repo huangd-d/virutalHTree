@@ -104,30 +104,62 @@
             height: 2px;
             background-color: #409eff;
         }
+
+        .h-is-loading {
+            background-color: #409eff;
+        }
+
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            flex: 1;
+        }
         
     </style>
     
 </head>
 <body>
     <div id="tree"></div>
+    <button onclick="treeReLoad">重新加载</button>
     <script  type="module">
         import {VitrulHTree} from './vitrulTree.js';
         // console.log(VitrulHTree);
         let tree = new VitrulHTree({
             el: document.getElementById('tree'),
-            showCheckbox: true,
+            showCheckbox: false,
             data: Array.from({length: 10}, (v, i) => ({
                 id: `${i}`,
                 label: `name${i}`,
-                children: Array.from({length: 10}, (v, j) => ({
-                    id: `${i}-${j}`,
-                    label: `name${i}-${j}`,
-                    children: Array.from({length: 10}, (v, k) => ({
-                        id: `${i}-${j}-${k}`,
-                        label: `name${i}-${j}-${k}`,
-                    }))
-                }))
+                children: []
+                // Array.from({length: 10}, (v, j) => ({
+                //     id: `${i}-${j}`,
+                //     label: `name${i}-${j}`,
+                //     children: Array.from({length: 10}, (v, k) => ({
+                //         id: `${i}-${j}-${k}`,
+                //         label: `name${i}-${j}-${k}`,
+                //     }))
+                // }))
             })),
+            renderContent(data){
+                // 一定要有 h-tree-label 这个 标签 是用来显示 label 的
+                const divDom = document.createElement('div');
+                divDom.className = 'flex-between';
+                divDom.innerHTML = `
+                    <div class="h-tree-label">${data.label}-------</div>
+                    <div class="icon">icon</div>
+                    `;
+
+                return divDom;
+            }, // 自定义渲染内容
+            load: (node, resolve) => {
+                setTimeout(() => {
+                    resolve(Array.from({length: 10}, (v, i) => ({
+                        id: `${node.id}-${i}`,
+                        label: `name${node.id}-${i}`,
+                        children: []
+                    })))
+                }, 1000);
+            },
             getNodeHeight: (data) => {
                 if (data.id.length <= 2) {
                     return 36
@@ -135,7 +167,36 @@
                     return 50
                 }
             },
-        })
+        });
+
+        setTimeout(() => {
+            tree.reloadChildrenByNodeKey('0');
+        }, 5000)
+
+        // const treeReLoad = () => {
+            
+        // }
+
+        // 计算 目标月份
+
+        
+        // const setNum = (x,y) => {
+        //     return (x + y % 12 - 1 + 12) % 12 + 1;
+        // }
+
+        // for (let i = 0; i < 40; i++) {
+        //     console.log( setNum(3, -i) ) ;
+        // }
+
+        // // 计算 目标月份
+        // const calculateTargetMonth = (currentMonth, offset) => {
+        //     return (currentMonth + offset % 12 - 1 + 12) % 12 + 1;
+        // }
+
+        // const currentMonth = new Date().getMonth() + 1; // 获取当前月份
+        // const offset = -5; // 输入差值
+        // const targetMonth = calculateTargetMonth(currentMonth, offset);
+        // console.log(`当前月份: ${currentMonth}, 目标月份: ${targetMonth}`);
         
     </script>
 </body>

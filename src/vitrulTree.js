@@ -103,6 +103,10 @@ export class VitrulHTree {
             if (!node) {
                 return;
             }
+            if (this.load && (!node.children || node.children.length === 0)) {
+                node.expanded = false; // 如果是异步加载子节点，则默认不展开
+                return;
+            }
             node.expanded = true;// 递归展开所有父节点
             if (!this.autoExpandParent) {
                 return;
@@ -222,6 +226,9 @@ export class VitrulHTree {
         expandIcon.addEventListener("click", (e) => {
             const index = e.target.parentNode.dataset.id * 1;
             const node = this.visibleNodes[this.startIndex + index];
+            if (this.load && (!node.children || node.children.length === 0)) {
+                e.target.parentNode.classList.add("h-is-loading");
+            }
             this.expandNode(node);
         });
         item.appendChild(expandIcon);
@@ -242,26 +249,21 @@ export class VitrulHTree {
             });
             item.appendChild(checkbox);
         }
+        let labelDom;
         if (this.renderContent) {
-            const itemDom = this.renderContent(node.data);
-            if (itemDom instanceof HTMLElement) {
-                itemDom.style.height = `${node.height}px`;
-                itemDom.dataset.id = index;
-                return itemDom;
-            }
-            return;
+            labelDom = this.renderContent(node.data);
             // item.appendChild(itemDom);
             // return itemDom;
         } else {
             // 自定义生成内容dom
-            const content = document.createElement("div");
-            content.className = "h-tree-label";
-            content.style.display = "flex";
-            content.style.flex = "1";
-            content.style.alignItems = "center";
-            content.innerText = node.data.label;
-            item.appendChild(content);
+            labelDom = document.createElement("div");
+            labelDom.className = "h-tree-label";
+            labelDom.style.display = "flex";
+            labelDom.style.flex = "1";
+            labelDom.style.alignItems = "center";
+            labelDom.innerText = node.data.label;
         }
+        item.appendChild(labelDom);
         
         return item;
     }
@@ -349,7 +351,7 @@ export class VitrulHTree {
         nodeDom.style.paddingLeft = `${node.level * this.indent}px`;
         nodeDom.style.height = `${node.height}px`;
 
-        nodeDom.querySelector(".h-tree-label").innerText = node.label;// 更新label
+        nodeDom.querySelector(".h-tree-label").innerHTML = node.label;// 更新label
         // console.log();
         
     }
@@ -380,6 +382,14 @@ export class VitrulHTree {
                     resolve(node.children); // 否则直接返回子节点
                 }
             }).then((children) => {
+                if (this.load && !node.children.length) {
+                    // node.children = children;
+                    // 找到对应的 this.treeNodeDoms 中 dom 节点
+                    const dom = this.treeNodeDoms[index - this.startIndex];
+                    if (dom) {
+                        dom.classList.remove("h-is-loading"); // 移除加载中样式
+                    }
+                }
                 if (children.length === 0) {
                     node.isLeaf = true;
                     node.children = [];
@@ -454,6 +464,7 @@ export class VitrulHTree {
         const runDelete = (node) => {
             // 删除节点
             this.nodeMap.delete(node.id);
+            this.visibleNodes = this.visibleNodes.filter((item) => item.id !== node.id);
             // 遍历子节点
             for (let i = 0; i < node.children.length; i++) {
                 const child = node.children[i];
@@ -461,12 +472,18 @@ export class VitrulHTree {
                 runDelete(child);
             }
         };
-        runDelete(node); // 删除节点
+        for (let i = 0; i < node.children.length; i++) {
+            const child = node.children[i];
+            // 递归删除子节点
+            runDelete(child);
+        }
+        // runDelete(node); // 删除节点
         // 将节点设置为未展开状态
         node.expanded = false;
         // 将节点设置为非叶子节点
         node.isLeaf = false;
         node.children = []; // 清空子节点
+        this.updateDom();
         this.expandNode(node); // 重新加载子节点
         
     }
