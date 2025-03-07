@@ -105,8 +105,8 @@
             background-color: #409eff;
         }
 
-        .h-is-loading {
-            background-color: #409eff;
+        .h-is-loading, .h-is-current {
+            background-color: #b7dbf8;
         }
 
         .flex-between {
@@ -160,6 +160,9 @@
                     })))
                 }, 1000);
             },
+            nodeClick(data, node){
+                console.log(node);
+            }, // 节点点击事件
             getNodeHeight: (data) => {
                 if (data.id.length <= 2) {
                     return 36

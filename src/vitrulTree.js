@@ -69,8 +69,6 @@ export class VitrulHTree {
         this.currentNodeKey = options.currentNodeKey || null;
         // 缩进距离
         this.indent = options.indent || 16;
-        // 是否自动展开父级
-        this.accordion = options.accordion || false;
         // 默认滚动展示多少个节点
         this.showDomNum = options.showDomNum || 50;
         // 每个node 高度方法
@@ -79,6 +77,13 @@ export class VitrulHTree {
         this.startIndex = 0;
         // 自定义渲染节点
         this.renderContent = options.renderContent || null;
+
+
+        this.expandOnClickNode = options.expandOnClickNode || false;
+        this.checkOnClickNode = options.checkOnClickNode || false;
+        // 是否手风琴模式
+        // this.accordion = options.accordion || false;
+        this.accordion = false;
 
         // 生成dom 集合
         this.treeNodeDoms = [];
@@ -215,6 +220,29 @@ export class VitrulHTree {
         item.style.height = `${node.height}px`;
         item.style.paddingLeft = `${node.level * this.indent}px`;
         item.dataset.id = index;
+
+        item.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const index = e.target.dataset.id * 1;
+            const node = this.visibleNodes[this.startIndex + index];
+            this.treeNodeDoms.forEach((item) => {
+                item.classList.remove("h-is-current");
+            });
+            e.target.classList.add("h-is-current");
+            this.nodeClick(node);
+
+            if (this.expandOnClickNode) {
+                this.expandNode(node);
+            }
+            if (this.checkOnClickNode && this.showCheckbox) {
+                this.checkedNode(node);
+            }
+        });
+
+
+
+
         // 生成展开节点dom
         const expandIcon = document.createElement("span");
         expandIcon.className = "h-tree-expand-icon";
@@ -224,6 +252,8 @@ export class VitrulHTree {
         expandIcon.style.marginRight = "6px";
         expandIcon.style.cursor = "pointer";
         expandIcon.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             const index = e.target.parentNode.dataset.id * 1;
             const node = this.visibleNodes[this.startIndex + index];
             if (this.load && (!node.children || node.children.length === 0)) {
@@ -243,6 +273,8 @@ export class VitrulHTree {
             checkbox.style.height = "100%";
             checkbox.style.marginRight = "6px";
             checkbox.addEventListener("click", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 const index = e.target.parentNode.dataset.id * 1;
                 const node = this.visibleNodes[this.startIndex + index];
                 this.checkedNode(node);
@@ -362,6 +394,29 @@ export class VitrulHTree {
             return;
         }
         const index = this.visibleNodes.findIndex((item) => item.id === node.id);
+        if (this.accordion && node.expanded === true) {
+            // 同级保持唯一  这块现在有问题， 后面继续写
+            const deleteIndexs = []; // 需要删除的节点
+            for (let i = 0; i < this.visibleNodes.length; i++) {
+                if (node.level < this.visibleNodes[i].level) {
+                    continue;
+                }
+                if (node.level === this.visibleNodes[i].level) {
+                    // 同级节点 才去统计 其子节点 index
+                    this.visibleNodes[i].expanded = false;
+                    let nextIndex = i + 1;
+                    let nextNode = this.visibleNodes[nextIndex];
+                    while (nextNode && nextNode.level > node.level) {
+                        // 删除所有 同级节点 的子节点
+                        deleteIndexs.push(nextIndex);
+                        nextNode = this.visibleNodes[++nextIndex];
+                    }
+                }
+                
+            }
+            // 删除所有同级节点的子节点
+            this.visibleNodes = this.visibleNodes.filter((item, i) => !deleteIndexs.includes(i));
+        }
         if (node.expanded) {
             node.expanded = false;
             let endIndex = index + 1;
