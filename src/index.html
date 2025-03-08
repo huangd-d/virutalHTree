@@ -127,6 +127,7 @@
         let tree = new VitrulHTree({
             el: document.getElementById('tree'),
             showCheckbox: false,
+            accordion: true,
             data: Array.from({length: 10}, (v, i) => ({
                 id: `${i}`,
                 label: `name${i}`,
@@ -172,9 +173,9 @@
             },
         });
 
-        setTimeout(() => {
-            tree.reloadChildrenByNodeKey('0');
-        }, 5000)
+        // setTimeout(() => {
+        //     tree.reloadChildrenByNodeKey('0');
+        // }, 5000)
 
         // const treeReLoad = () => {
             

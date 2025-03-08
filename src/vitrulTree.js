@@ -32,7 +32,7 @@ export class VitrulHTree {
         // 保存节点数据 用于快速查找
         this.nodeMap = new Map();
         // 保存树节点数据
-        this.treeData = [];
+        this.treeNodes = [];
         // 保存虚拟滚动容器中显示的节点
         this.visibleNodes = [];
         // 节点唯一key
@@ -82,14 +82,13 @@ export class VitrulHTree {
         this.expandOnClickNode = options.expandOnClickNode || false;
         this.checkOnClickNode = options.checkOnClickNode || false;
         // 是否手风琴模式
-        // this.accordion = options.accordion || false;
-        this.accordion = false;
+        this.accordion = options.accordion || false;
 
         // 生成dom 集合
         this.treeNodeDoms = [];
 
         // 初始构建树节点
-        this.treeData = this.initTreeData(this.datas, null, 0);
+        this.treeNodes = this.initTreeNodes(this.datas, null, 0);
         // 根据默认展开节点来构建所需要展示的所有节点
         this.initExpandedNodes();
         // 根据默认选中节点来构建所需要展示的所有节点
@@ -97,7 +96,7 @@ export class VitrulHTree {
             this.initCheckedNodes();
         }
         // 根据展开节点来构建所需要展示的所有节点
-        this.initVisibleNodes(this.treeData, this.visibleNodes);
+        this.initVisibleNodes(this.treeNodes, this.visibleNodes);
         
         // 初始化dom
         this.initDom();
@@ -143,7 +142,7 @@ export class VitrulHTree {
         });
     }
 
-    initTreeData(datas, parentId, level) {
+    initTreeNodes(datas, parentId, level) {
         return datas.map((item) => {
             const node = new Node();
             node.id = item[this.nodeKey];
@@ -163,7 +162,7 @@ export class VitrulHTree {
             this.nodeMap.set(node.id, node);
 
             if (item[this.props.children] && item[this.props.children].length > 0) {
-                node.children = this.initTreeData(item.children, node.id, level + 1);
+                node.children = this.initTreeNodes(item.children, node.id, level + 1);
             }
 
             return node;
@@ -393,30 +392,27 @@ export class VitrulHTree {
         if (node.isLeaf) {
             return;
         }
-        const index = this.visibleNodes.findIndex((item) => item.id === node.id);
-        if (this.accordion && node.expanded === true) {
-            // 同级保持唯一  这块现在有问题， 后面继续写
-            const deleteIndexs = []; // 需要删除的节点
-            for (let i = 0; i < this.visibleNodes.length; i++) {
-                if (node.level < this.visibleNodes[i].level) {
-                    continue;
+        if (this.accordion && node.expanded === false) {
+            // 找到同级节点 开始和结束  中间等级高的节点说明全是 子节点全部删除
+            const childrenNodes = node.parentId ? this.nodeMap.get(node.parentId).children : this.treeNodes;
+            const firstNode = childrenNodes[0];
+            const firstNodeIndex = this.visibleNodes.findIndex((item) => item.id === firstNode.id);
+            const lastNode = childrenNodes[childrenNodes.length - 1];
+            const lastNodeIndex = this.visibleNodes.findIndex((item) => item.id === lastNode.id);
+
+            // 只获取 展示节点中  本级节点 然后再塞进 展示列表中
+            const arr = [];
+            for (let i = firstNodeIndex; i < lastNodeIndex; i++) {
+                const n = this.visibleNodes[i];
+                if (n.level === node.level) {
+                    n.expanded = false;
+                    arr.push(n);
                 }
-                if (node.level === this.visibleNodes[i].level) {
-                    // 同级节点 才去统计 其子节点 index
-                    this.visibleNodes[i].expanded = false;
-                    let nextIndex = i + 1;
-                    let nextNode = this.visibleNodes[nextIndex];
-                    while (nextNode && nextNode.level > node.level) {
-                        // 删除所有 同级节点 的子节点
-                        deleteIndexs.push(nextIndex);
-                        nextNode = this.visibleNodes[++nextIndex];
-                    }
-                }
-                
             }
-            // 删除所有同级节点的子节点
-            this.visibleNodes = this.visibleNodes.filter((item, i) => !deleteIndexs.includes(i));
+            this.visibleNodes.splice(firstNodeIndex, lastNodeIndex - firstNodeIndex, ...arr); // 删除所有  并重新加入统计节点
         }
+        
+        const index = this.visibleNodes.findIndex((item) => item.id === node.id);
         if (node.expanded) {
             node.expanded = false;
             let endIndex = index + 1;
@@ -455,7 +451,7 @@ export class VitrulHTree {
                 } else {
                     // 说明是新加载的数据
                     const arr = [];
-                    const nodes = this.initTreeData(children, node.id, node.level + 1);
+                    const nodes = this.initTreeNodes(children, node.id, node.level + 1);
                     node.children = children;
                     this.initVisibleNodes(nodes, arr);
                     // 找到原来data中的节点，然后把 children 赋值给他
