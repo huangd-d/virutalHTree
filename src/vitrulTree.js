@@ -65,8 +65,8 @@ export class VitrulHTree {
         // 在显示复选框的情况下，是否严格的遵循父子不互相关联的做法，默认为 false
         this.checkStrictly = options.checkStrictly || false;
  
-        // 当前选中节点
-        this.currentNodeKey = options.currentNodeKey || null;
+        // 设置初始化选中节点
+        this.currentNodeKey = options.defaultCurrentNodeKey || null;
         // 缩进距离
         this.indent = options.indent || 16;
         // 默认滚动展示多少个节点
@@ -78,11 +78,17 @@ export class VitrulHTree {
         // 自定义渲染节点
         this.renderContent = options.renderContent || null;
 
+        this.filterNodeMethod = options.filterNodeMethod || (() => true);
+
 
         this.expandOnClickNode = options.expandOnClickNode || false;
         this.checkOnClickNode = options.checkOnClickNode || false;
         // 是否手风琴模式
         this.accordion = options.accordion || false;
+
+        this.nodeClick = options.nodeClick || (() => {});
+
+        this.filterText = "";
 
         // 生成dom 集合
         this.treeNodeDoms = [];
@@ -158,6 +164,7 @@ export class VitrulHTree {
             node.parentId = parentId;
             node.level = level;
             node.height = this.getNodeHeight(item);
+            node.visible = this.filterNodeMethod( this.filterText, item);
 
             this.nodeMap.set(node.id, node);
 
@@ -174,6 +181,9 @@ export class VitrulHTree {
         // 遍历节点列表
         nodeList.forEach((node) => {
             // 将节点添加到数组中
+            if (!node.visible) {
+                return;
+            }
             arr.push(node);
             // 如果节点展开且有子节点，则递归调用initVisibleNodes函数
             if (node.expanded && node.children) {
@@ -221,20 +231,23 @@ export class VitrulHTree {
         item.dataset.id = index;
 
         item.addEventListener("click", (e) => {
+            console.log("h-tree-item--", e);
+            
             e.preventDefault();
             e.stopPropagation();
-            const index = e.target.dataset.id * 1;
+            const index = this.treeNodeDoms.findIndex((dom) => dom === e.target || dom.contains(e.target));
             const node = this.visibleNodes[this.startIndex + index];
-            this.treeNodeDoms.forEach((item) => {
-                item.classList.remove("h-is-current");
+            this.treeNodeDoms.forEach((dom) => {
+                dom.classList.remove("h-is-current");
             });
             e.target.classList.add("h-is-current");
+            this.currentNodeKey = node.id;
             this.nodeClick(node);
 
             if (this.expandOnClickNode) {
                 this.expandNode(node);
             }
-            if (this.checkOnClickNode && this.showCheckbox) {
+            if (this.showCheckbox && this.checkOnClickNode) {
                 this.checkedNode(node);
             }
         });
@@ -253,7 +266,7 @@ export class VitrulHTree {
         expandIcon.addEventListener("click", (e) => {
             e.preventDefault();
             e.stopPropagation();
-            const index = e.target.parentNode.dataset.id * 1;
+            const index = this.treeNodeDoms.findIndex((dom) => dom === e.target || dom.contains(e.target));
             const node = this.visibleNodes[this.startIndex + index];
             if (this.load && (!node.children || node.children.length === 0)) {
                 e.target.parentNode.classList.add("h-is-loading");
@@ -274,7 +287,7 @@ export class VitrulHTree {
             checkbox.addEventListener("click", (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                const index = e.target.parentNode.dataset.id * 1;
+                const index = this.treeNodeDoms.findIndex((dom) => dom === e.target || dom.contains(e.target));
                 const node = this.visibleNodes[this.startIndex + index];
                 this.checkedNode(node);
             });
@@ -359,6 +372,16 @@ export class VitrulHTree {
         }
     }
     updateDomAttribute(nodeDom, node) {
+        if (node.id === this.currentNodeKey) {
+            nodeDom.classList.add("h-is-current");
+        } else {
+            nodeDom.classList.remove("h-is-current");
+        }
+        if (node.isLeaf) {
+            nodeDom.classList.add("h-is-leaf");
+        } else {
+            nodeDom.classList.remove("h-is-leaf");
+        }
         if (node.expanded) {
             nodeDom.classList.add("h-is-expanded");
         } else {
@@ -424,6 +447,7 @@ export class VitrulHTree {
             this.visibleNodes.splice(index + 1, endIndex - index - 1); // 删除子节点
              
             this.updateDom();
+            console.log(1, node);
         } else {
             node.expanded = true;
             new Promise((resolve) => {
@@ -465,12 +489,21 @@ export class VitrulHTree {
                 
                 
                 this.updateDom();
+                console.log(node);
+                
+                
+            }).catch((e) => {
+                console.log(e);
             });
         }
 
     }
 
     checkedNode(node) {
+        if (node.disabled) {
+            return;
+        }
+
         node.checked = !node.checked;
         node.indeterminate = false;
         if (this.checkStrictly) {
@@ -553,5 +586,25 @@ export class VitrulHTree {
             data = data[this.props.children].find((item) => item[this.nodeKey] === id); // 找到子节点
         }
         return keyList.length ? null : data;
+    }
+    filter(value){
+
+        this.filterText = value;
+        this.nodeMap.forEach((node) => {
+            node.visible = this.filterNodeMethod(this.filterText, node.data);
+            if (node.visible) {
+                let parentNode = this.nodeMap.get(node.parentId);
+                while (parentNode) {
+                    parentNode.visible = true;
+                    parentNode.expanded = true;
+                    parentNode = this.nodeMap.get(parentNode.parentId);
+                }
+            }
+        });
+        this.visibleNodes = [];
+        // 根据展开节点来构建所需要展示的所有节点
+        this.initVisibleNodes(this.treeNodes, this.visibleNodes);
+        this.complateDom(); // 完善dom
+        this.updateDom(); // 更新DOM
     }
 }

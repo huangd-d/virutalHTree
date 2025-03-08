@@ -40,6 +40,16 @@
         .h-is-expanded .h-tree-expand-icon::before {
             transform: rotate(90deg);
         }
+
+        .h-is-leaf .h-tree-expand-icon {
+            /* visibility: hidden; */
+            opacity: 0;
+            pointer-events: none;
+        }
+
+
+
+
         .h-tree-checkbox {
             position: relative;
             /* display: flex;
@@ -104,6 +114,17 @@
             height: 2px;
             background-color: #409eff;
         }
+        .h-is-disabled .h-tree-checkbox {
+            cursor: not-allowed;
+        }
+        .h-is-disabled .h-tree-checkbox::before {
+            border-color: #ebeef5;
+            background-color: #f5f7fa;
+        }
+        .h-is-disabled .h-tree-checkbox::after {
+            display: none;
+        }
+
 
         .h-is-loading, .h-is-current {
             background-color: #b7dbf8;
@@ -127,19 +148,19 @@
         let tree = new VitrulHTree({
             el: document.getElementById('tree'),
             showCheckbox: false,
-            accordion: true,
+            // accordion: true,
             data: Array.from({length: 10}, (v, i) => ({
                 id: `${i}`,
                 label: `name${i}`,
-                children: []
-                // Array.from({length: 10}, (v, j) => ({
-                //     id: `${i}-${j}`,
-                //     label: `name${i}-${j}`,
-                //     children: Array.from({length: 10}, (v, k) => ({
-                //         id: `${i}-${j}-${k}`,
-                //         label: `name${i}-${j}-${k}`,
-                //     }))
-                // }))
+                // children: []
+                children: Array.from({length: 10}, (v, j) => ({
+                    id: `${i}-${j}`,
+                    label: `name${i}-${j}`,
+                    children: Array.from({length: 10}, (v, k) => ({
+                        id: `${i}-${j}-${k}`,
+                        label: `name${i}-${j}-${k}`,
+                    }))
+                }))
             })),
             renderContent(data){
                 // 一定要有 h-tree-label 这个 标签 是用来显示 label 的
@@ -152,15 +173,15 @@
 
                 return divDom;
             }, // 自定义渲染内容
-            load: (node, resolve) => {
-                setTimeout(() => {
-                    resolve(Array.from({length: 10}, (v, i) => ({
-                        id: `${node.id}-${i}`,
-                        label: `name${node.id}-${i}`,
-                        children: []
-                    })))
-                }, 1000);
-            },
+            // load: (node, resolve) => {
+            //     setTimeout(() => {
+            //         resolve(Array.from({length: 10}, (v, i) => ({
+            //             id: `${node.id}-${i}`,
+            //             label: `name${node.id}-${i}`,
+            //             children: []
+            //         })))
+            //     }, 1000);
+            // },
             nodeClick(data, node){
                 console.log(node);
             }, // 节点点击事件
@@ -171,8 +192,14 @@
                     return 50
                 }
             },
+            filterNodeMethod(value, data) {
+                return data.label.includes(value);
+            }
         });
 
+        setTimeout(() => {
+            tree.filter('-7');
+        }, 5000)
         // setTimeout(() => {
         //     tree.reloadChildrenByNodeKey('0');
         // }, 5000)
