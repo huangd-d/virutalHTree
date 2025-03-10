@@ -113,7 +113,7 @@ export class VitrulHTree {
             if (!node) {
                 return;
             }
-            if (this.load && (!node.children || node.children.length === 0)) {
+            if (typeof this.load === "function" && this.load && (!node.children || node.children.length === 0)) {
                 node.expanded = false; // 如果是异步加载子节点，则默认不展开
                 return;
             }
@@ -148,13 +148,22 @@ export class VitrulHTree {
         });
     }
 
+    // 初始化树节点
+    // 初始化树节点
+        // 遍历数据
     initTreeNodes(datas, parentId, level) {
+            // 创建节点
         return datas.map((item) => {
+            // 设置节点id
             const node = new Node();
             node.id = item[this.nodeKey];
+            // 设置节点标签
             
+            // 设置节点是否禁用
             node.label = item[this.props.label];
+            // 设置节点是否为叶子节点
             node.disabled = item[this.props.disabled] || false;
+            // 设置节点数据
             node.isLeaf = item[this.props.isLeaf] || false;
             node.data = {
                 ...item,
@@ -169,7 +178,7 @@ export class VitrulHTree {
             this.nodeMap.set(node.id, node);
 
             if (item[this.props.children] && item[this.props.children].length > 0) {
-                node.children = this.initTreeNodes(item.children, node.id, level + 1);
+                node.children = this.initTreeNodes(item[this.props.children], node.id, level + 1);
             }
 
             return node;
@@ -268,7 +277,7 @@ export class VitrulHTree {
             e.stopPropagation();
             const index = this.treeNodeDoms.findIndex((dom) => dom === e.target || dom.contains(e.target));
             const node = this.visibleNodes[this.startIndex + index];
-            if (this.load && (!node.children || node.children.length === 0)) {
+            if (typeof this.load === "function" && this.load && (!node.children || node.children.length === 0)) {
                 e.target.parentNode.classList.add("h-is-loading");
             }
             this.expandNode(node);
@@ -451,13 +460,13 @@ export class VitrulHTree {
         } else {
             node.expanded = true;
             new Promise((resolve) => {
-                if (this.load && !node.children.length) { // 如果有load方法，并且没有子节点，则调用load方法获取子节点
+                if (typeof this.load === "function" && this.load && !node.children.length) { // 如果有load方法，并且没有子节点，则调用load方法获取子节点
                     this.load(node, resolve);  // resolve返回子节点
                 } else {
                     resolve(node.children); // 否则直接返回子节点
                 }
             }).then((children) => {
-                if (this.load && !node.children.length) {
+                if (typeof this.load === "function" && this.load && !node.children.length) {
                     // node.children = children;
                     // 找到对应的 this.treeNodeDoms 中 dom 节点
                     const dom = this.treeNodeDoms[index - this.startIndex];
@@ -537,29 +546,15 @@ export class VitrulHTree {
 
     // 根据节点key重新加载子节点
     reloadChildrenByNodeKey(nodeKey) {
-        // 获取节点
         const node = this.nodeMap.get(nodeKey);
-        // 如果节点不存在，则打印警告信息
         if (!node) {
             console.warn(`nodeKey ${nodeKey} not found`);
-           return;
+            return;
         }
-        // 循环去除 nodeMap 引用
-        const runDelete = (node) => {
-            // 删除节点
-            this.nodeMap.delete(node.id);
-            this.visibleNodes = this.visibleNodes.filter((item) => item.id !== node.id);
-            // 遍历子节点
-            for (let i = 0; i < node.children.length; i++) {
-                const child = node.children[i];
-                // 递归删除子节点
-                runDelete(child);
-            }
-        };
         for (let i = 0; i < node.children.length; i++) {
-            const child = node.children[i];
-            // 递归删除子节点
-            runDelete(child);
+            const n = node.children[i];
+            this.removeNodeByKey(n.id);
+            
         }
         // runDelete(node); // 删除节点
         // 将节点设置为未展开状态
@@ -588,7 +583,6 @@ export class VitrulHTree {
         return keyList.length ? null : data;
     }
     filter(value){
-
         this.filterText = value;
         this.nodeMap.forEach((node) => {
             node.visible = this.filterNodeMethod(this.filterText, node.data);
@@ -606,5 +600,147 @@ export class VitrulHTree {
         this.initVisibleNodes(this.treeNodes, this.visibleNodes);
         this.complateDom(); // 完善dom
         this.updateDom(); // 更新DOM
+    }
+    removeNodeByKey(nodeKey) {
+        const node = this.nodeMap.get(nodeKey);
+        const pNode = this.nodeMap.get(node.parentId);
+        if (!node) {
+            console.warn(`nodeKey ${nodeKey} not found`);
+            return;
+        }
+        if (!pNode) {
+            this.treeNodes = this.treeNodes.filter((item) => item.id !== nodeKey);
+        }
+        if (pNode) {
+            pNode.children = pNode.children.filter((item) => item.id !== nodeKey);
+        }
+        // 去除原始数据中的子节点
+        const d = this.getDataByKey(this.datas, nodeKey);
+        d[this.props.children] = [];
+
+        // 循环去除 nodeMap 引用 和 节点
+        const runDelete = (node) => {
+            // 删除节点
+            this.nodeMap.delete(node.id);
+            this.visibleNodes = this.visibleNodes.filter((item) => item.id !== node.id);
+            // 遍历子节点
+            for (let i = 0; i < node.children.length; i++) {
+                const child = node.children[i];
+                // 递归删除子节点
+                runDelete(child);
+            }
+        };
+        runDelete(node);
+        this.updateDom();
+    }
+    updateKeyData(key, data) {
+        const node = this.nodeMap.get(key);
+        if (!node) {
+            return;
+        }
+        const d = this.getDataByKey(this.datas, key); // 获取原始数据
+        if (!d) {
+            return;
+        }
+        const vIndex = this.visibleNodes.findIndex((item) => item.id === key);
+        const pNode = this.nodeMap.get(node.parentId);
+        let nIndex = 0; // 获取父节点中子节点的索引
+        if (pNode) {
+            nIndex = pNode.children.findIndex((item) => item.id === key);
+        } else {
+            nIndex = this.treeNodes.findIndex((item) => item.id === key);
+        }
+        this.removeNodeByKey(key);
+
+        // 说明是新加载的数据
+        const arr = [];
+        const nodes = this.initTreeNodes([data], node.parentId, node.level);
+        if (pNode) {
+            pNode.children.splice(nIndex, 0, ...nodes);
+        } else {
+            this.treeNodes.splice(nIndex, 0, ...nodes);
+        }
+        this.initVisibleNodes(nodes, arr);
+        node.data = {
+            ...data,
+            children: [],
+        };
+        this.visibleNodes.splice(vIndex, 0, ...arr);
+        this.nodeMap.set(key, node);
+        this.complateDom();
+        this.updateDom();
+    }
+
+    getCheckedNodes(includeHalfChecked = false) {
+        // 接收1个布尔类型参数:1. 默认值为 false. 如果参数为 true, 返回值包含半选中节点数据
+        const nodes = [];
+        this.nodeMap.forEach((node) => {
+            if (node.checked || (node.indeterminate && includeHalfChecked)) {
+                nodes.push(node.data); // 获取所有选中的节点
+            }
+        });
+        return nodes;
+    }
+    setChecked(key, checked) {
+        const node = this.nodeMap.get(key);
+        if (!node) {
+            console.warn(`nodeKey ${key} not found`);
+            return;
+        }
+        node.checked = checked;
+        if (this.checkStrictly) {
+            this.updateDom();
+            return; // 如果是父子不关联，则直接返回
+            
+        }
+        const runCheck = (node, checked) => {
+            node.children.forEach((item) => {
+                item.checked = checked;
+                runCheck(item, checked);
+            });
+        };
+        runCheck(node);
+        this.updateDom();
+    }
+    getCurrentNode() {
+        const n = this.nodeMap.get(this.currentNodeKey);
+        return n ||  null;
+    }
+    append(key, data) {
+        const pNode = this.nodeMap.get(key);
+        if (!pNode) {
+            console.warn(`nodeKey ${key} not found`);
+            return;
+        }
+        const lastNode = pNode.children[pNode.children.length - 1];
+        const vIndex = this.visibleNodes.findIndex((item) => item.id === lastNode.id);
+        const nodes = this.initTreeNodes([data], pNode.id, pNode.level + 1);
+        pNode.children.push(...nodes);
+        if (vIndex > -1) {
+            this.visibleNodes.splice(vIndex + 1, 0, nodes[0]);
+            this.complateDom();
+            this.updateDom();
+        }
+    }
+    insertAfter(key, data) {
+        const preNode = this.nodeMap.get(key);
+        if (!preNode) {
+            console.warn(`nodeKey ${key} not found`);
+            return;
+        }
+        const parentNode = this.nodeMap.get(preNode.parentId) ;
+        const pIndex = (parentNode || this.treeNodes).findIndex((item) => item.id === key);
+        const vIndex = this.visibleNodes.findIndex((item) => item.id === key);
+        const nodes = this.initTreeNodes([data], preNode.parentId, preNode.level);
+        if (parentNode) {
+            parentNode.children.splice(pIndex + 1, 0, nodes[0]);
+        } else {
+            this.treeNodes.splice(pIndex + 1, 0, nodes[0]);
+        }
+        if (vIndex > -1) {  
+            this.visibleNodes.splice(vIndex + 1, 0, nodes[0]);
+            this.complateDom();
+            this.updateDom();
+        }
     }
 }

@@ -198,8 +198,29 @@
         });
 
         setTimeout(() => {
-            tree.filter('-7');
+            // tree.updateKeyData('0', {
+            //     id: '0',
+            //     label: 'name0000000',
+            //     children: Array.from({length: 10}, (v, i) => ({
+            //         id: `0----${i}`,
+            //         label: `name----${i}`,
+            //         // children: []
+            //         children:[]
+            //     }))
+            // })
+            // tree.append('0', {
+            //     id: '---------',
+            //     label: '--------------'
+            // })
+            tree.insertAfter('0', {
+                id: '---------',
+                label: '--------------'
+            })
         }, 5000)
+
+        // setTimeout(() => {
+        //     tree.filter('-7');
+        // }, 5000)
         // setTimeout(() => {
         //     tree.reloadChildrenByNodeKey('0');
         // }, 5000)
