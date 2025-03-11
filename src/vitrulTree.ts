@@ -3,43 +3,40 @@ type TreeNodeProps<T = any> = {
   children?: keyof T
   label?: keyof T
   disabled?: keyof T
-  isLeaf?: keyof T
+  isLeaf?: keyof T,
+  class?: string
 }
-// 使用条件类型动态生成TreeData结构
-type TreeData<T, K extends TreeNodeProps<T> = TreeNodeProps<T>> = T & {
-    [P in NonNullable<K['children']>]: Array<TreeData<T, K>>  // 递归定义children结构
-  } & {
-    [P in NonNullable<K['label']>]?: string  // label字段类型约束
-  } & {
-    [P in NonNullable<K['disabled']>]?: boolean  // disabled字段类型约束
-  } & {
-    [P in NonNullable<K['isLeaf']>]?: boolean  // isLeaf字段类型约束
-  }
 
-interface TreeRenderContext<T> {
-  node: TreeNode<T>
-  data: T
-}
-const defaultNodeHeight = 30
+type nodeKey = string | 'id';
 
-type TreeRenderFn<T> = (ctx: TreeRenderContext<T>) => HTMLElement
-type LoadFn<T> = (node: TreeNode<T>, resolve: (data: T[]) => void) => void
-type FilterFn<T> = (filterText: string, data: T) => boolean
+type idValue = string | number | symbol;
 
-type TreeKey = string | number
-type TreeNodeMap<T> = Map<TreeKey, TreeNode<T>>
+const defaultNodeHeight = 26;
 
-interface TreeEmitEvent<T> {
-    'node-click': (node: TreeNode<T>, data: T) => void
-    'check-change': (nodes: TreeNode<T>[]) => void
-  }
+// 在原有类型基础上添加
+type BaseTreeNodeData<K extends TreeNodeProps<any> = {
+  children: 'children',
+  label: 'label',
+  disabled: 'disabled',
+  isLeaf: 'isLeaf'
+}> = {
+  [P in NonNullable<K['children']>]?: BaseTreeNodeData<K>[]  // 递归children结构
+} & {
+  [P in NonNullable<K['label']>]: string               // label字段类型
+} & {
+  [P in NonNullable<K['disabled']>]?: boolean          // disabled字段类型
+} & {
+  [P in NonNullable<K['isLeaf']>]?: boolean             // isLeaf字段类型
+} & {
+  [key in nodeKey]: idValue // 动态ID字段                      // 必须包含id字段
+};
 
 // 节点核心类型
 class TreeNode<T = any> {
   constructor(
-    public readonly id: string,
+    public readonly id: idValue,
     public data: T,
-    public parentId: string | null
+    public parentId: idValue | null
   ) {}
 
   children: TreeNode<T>[] = []
@@ -51,16 +48,18 @@ class TreeNode<T = any> {
   label: string = ''
   height: number = defaultNodeHeight
   disabled = false
-  loading = false
+  // loading = false
   isLeaf = false
 }
+// 在原有类型基础上修改
+type LoadFn<T> = (node: TreeNode<T>, resolve: (children: T[]) => void) => void;
 
 // 修改组件配置项类型约束
-interface VitrulHTreeOptions<T, K extends TreeNodeProps<T> = TreeNodeProps<T>> {
+interface VitrulHTreeOptions<BaseTreeNodeData> {
     el: HTMLElement
-    data: Array<TreeData<T, K>>  // 使用动态生成的TreeData类型
-    props?: K,
-  load?: LoadFn<T>
+    data: BaseTreeNodeData[]  // 使用动态生成的TreeData类型
+    props?: TreeNodeProps,
+  load?: LoadFn<BaseTreeNodeData>;
   highlightCurrent?: boolean
   defaultExpandAll?: boolean
   defaultExpandedKeys?: string[]
@@ -154,3 +153,5 @@ export class VitrulHTree<T = any> {
     return current ?? null
   }
 }
+
+
