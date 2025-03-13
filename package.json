@@ -22,10 +22,11 @@
     "@eslint/js": "^9.21.0",
     "eslint": "^9.21.0",
     "husky": "^9.1.7",
-    "lint-staged": "^15.4.3"
+    "lint-staged": "^15.4.3",
+    "vitest": "^3.0.8"
   },
   "lint-staged": {
-    "*.js": [
+    "*.{js,jsx,ts,tsx}": [
       "eslint --fix"
     ]
   },

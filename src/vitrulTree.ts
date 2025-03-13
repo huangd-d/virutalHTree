@@ -57,8 +57,8 @@ type LoadFn<T> = (node: TreeNode<T>, resolve: (children: T[]) => void) => void;
 // 修改组件配置项类型约束
 interface VitrulHTreeOptions<T = any> {
   el: HTMLElement
-  nodeKey: nodeKey;
   data: T[]  // 使用动态生成的TreeData类型
+  nodeKey?: nodeKey; // 移除初始化表达式
   props?: TreeNodeProps,
   load?: LoadFn<T> | undefined;
   highlightCurrent?: boolean;
@@ -137,7 +137,7 @@ export class VitrulHTree<T = any> {
   // ... 其他类型化方法和属性
 
   // 根据 vitrulTree.js  进行其它属性进行声明
-  private
+  // private
 
 
   constructor(private options: VitrulHTreeOptions<T>) {
@@ -733,6 +733,9 @@ export class VitrulHTree<T = any> {
   getCurrentNode(): TreeNode<T> | undefined {
     const n = this.nodeMap.get(this.currentNodeKey);
     return n || undefined;
+  }
+  getNodeByKey(key: idValue): TreeNode<T> | undefined {
+    return this.nodeMap.get(key);
   }
   append(key, data) {
     const pNode = this.nodeMap.get(key);
