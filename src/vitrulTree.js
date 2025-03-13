@@ -53,7 +53,7 @@ export class VitrulHTree {
         // 是否高亮当前选中节点
         this.highlightCurrent = options.highlightCurrent || false;
         // 是否默认展开所有节点
-        this.defaultExpandAll = options.defaultExpandAll || false;
+        // this.defaultExpandAll = options.defaultExpandAll || false;
         // 默认展开节点
         this.defaultExpandedKeys = options.defaultExpandedKeys || [];
         // 默认选中节点
