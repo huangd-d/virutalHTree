@@ -110,8 +110,8 @@ export class VitrulHTree<T = any> {
   private accordion: boolean = false;
   private indent: number = 16;
   private showDomNum: number = 50;
-  private paddingTop: number = 0;
-  private allHeight: number = 0;
+  // private paddingTop: number = 0;
+  // private allHeight: number = 0;
   private startIndex: number = 0;
   private props: TreeNodeProps = {
     children: 'children',
@@ -222,6 +222,14 @@ export class VitrulHTree<T = any> {
 
     // 初始化dom
     this.initDom();
+  }
+
+
+  get paddingTop() {
+    return this.visibleNodes.slice(0, this.startIndex).reduce((prev, node) => prev + node.height, 0);
+  }
+  get allHeight() {
+      return this.visibleNodes.reduce((prev, node) => prev + node.height, 0);
   }
 
   // 类型化方法示例
